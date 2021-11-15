@@ -1,0 +1,94 @@
+
+```{r}
+  z_sd <- function(x){
+    sd1 <- 0
+    sd_1 <- 0
+    zmean <- mean(x$score)
+    n <- nrow(x)
+    # sd1是每组的方差
+    sd1 <- sum(1/(n-1)*(x[,2]-zmean)^2)
+     # zmin是置信上界,zmax是置信上界
+    sd_1 <- (1/n- 1/nrow(data2))*sd1
+    zmin <- zmean-1.96*sqrt(sd_1)
+    zmax <- zmean+1.96*sqrt(sd_1)
+    c(zmean,sd1,zmin,zmax)
+  }
+  
+data1 <- read.csv("D:\\Rlesson2\\SRS\\data1.CSV",header = T)
+data2 <- data1[,c(1,11)]
+names(data2) <- c('x1','score')
+y = data.frame()
+y1 <- data.frame()
+
+# 总体均值
+Zmean <- mean(data2$score)
+# 第四题的所需要的总体方差(其实第二题已经求了)
+S2 <- sum(1/(nrow(data2)-1)*(data2[,2]-Zmean)^2)
+
+
+for (i in 1:max(data2$x1))
+{
+  x <- subset(data2,data2$x1==i)
+  # 各组的均值
+  zmean <- mean(x$score)
+  # 第四题所需要的各组的样本"方差"
+  sd2 <- sum(1/(nrow(data2)-1)*(data2[,2]-zmean)^2)
+  # 输出第三题
+  y[i,1] <- zmean
+  y[i,2] <- z_sd(x)[2]
+  y[i,3] <- z_sd(x)[3]
+  y[i,4] <- z_sd(x)[4]
+  # sd2是来衡量样本的好坏,理论上越接近总体方差越好
+  y1[i,1] <- sd2
+  y1[i,2] <- sd2 -S2
+  # 选第五组
+}
+
+
+names(y) <- c('mean','z_sd','zmin','zmax')
+#输出的y是汇总的表格
+write.csv(y,file='D:\\Rlesson2\\SRS\\out.CSV')
+y
+names(y1) <- c('每组对应的方差','与总方差比较后')
+
+write.csv(y1,file='D:\\Rlesson2\\SRS\\out1.CSV')
+y1
+
+```
+
+```{r}
+library(gplots)
+z_mean = y$mean
+names(z_mean) = 1:10
+
+barplot2(z_mean,plot.ci= T,ci.l=y$zmin,ci.u=y$zmax,xpd = F, main = '估计总体的睡眠质量',space = 0,xlab = 'group',ylab = '均值及其置信区间')
+
+```
+
+
+```{r}
+x <- sort(rnorm(20))
+y <- sort(rnorm(20))
+f <- lm(y~x)
+plot(x,y)
+prd <- predict(f,interval="confidence",level=0.95)
+abline(f)
+lines(x,prd[,2],lty=3,col="blue")
+lines(x,prd[,3],lty=3,col="blue")
+```
+
+
+```{r}
+z_1 <- 1.96
+d <- 1
+N <- nrow(data2)
+S2 <- sum(1/(nrow(data2)-1)*(data2[,2]-Zmean)^2)
+n <- 1/(1/N+d^2/z_1^2/S2)
+n
+```
+
+
+```{r}
+rm(list = ls())
+```
+
