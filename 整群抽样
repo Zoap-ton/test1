@@ -1,0 +1,218 @@
+---
+title: "整群抽样"
+author: "201913870033施嘉锦"
+date: "2021/12/2"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list = ls())
+```
+
+
+```{r}
+group <- c(30,40,50,60)
+a <- c(4,5,3,2)
+N <- 8
+n <- 4
+M0 <- 300
+
+Y_sum <- sum(group*a)*(N/n)
+(Y_mean <- Y_sum/M0) 
+
+f <- n/N
+(Var_Y <- N^2*(1-f)/M0^2/n*var(group*a))
+
+c(Y_mean - 1.96*sqrt(Var_Y),Y_mean +  1.96*sqrt(Var_Y))
+
+
+```
+
+
+```{r}
+(Y_r <- sum(group*a)/sum(group))
+#(Y <- Y_r*300)
+# M 未知
+var_YR <- (1-f)/(n*mean(group)^2)/(n-1)*(sum((group*a)^2)+Y_r^2*sum(group^2)-2*Y_r*sum(group*group*a))
+#M0 已知
+var_YR_1 <- (1-f)/(n*(M0/N)^2)/(n-1)*(sum((group*a)^2)+Y_r^2*sum(group^2)-2*Y_r*sum(group*group*a))
+
+var_YR_1
+c(Y_r - 1.96*sqrt(var_YR_1),Y_r +  1.96*sqrt(var_YR_1))
+c(Y_r - 1.96*sqrt(var_YR),Y_r +  1.96*sqrt(var_YR))
+```
+
+```{r}
+data1 <- read.csv("D:\\Rlesson2\\SRS\\BMI数据-按身高排序.csv")[1:84,c(2,3,4)]
+cor(data1$身高.cm.,data1$体重.kg.)
+mean(data1$体重.kg.)
+
+```
+
+
+
+```{r}
+data2 <- matrix(nrow = 7,ncol = 12)
+
+for(i in 1:7){
+  if(i%%2)
+  data2[i,] <- ((i-1)*12+1):(i*12) 
+  else
+  data2[i,] <- (i*12):((i-1)*12+1)
+  
+}
+data2
+
+```
+
+## 建立样本框1(蛇形)(都是一样的)
+```{r}
+# 蛇行走位
+# 分为n组,每组m个
+#  第一组 ....                                              第十二组
+#    1    2    3    4    5    6    7    8    9    10    11    12
+#   24   23   22   21   20   19   18   17   16    15    14    13
+#   25   26   27   28   29   30   31   32   33    34    35    36
+#   48   47   46   45   44   43   42   41   40    39    38    37
+#   49   50   51   52   53   54   55   56   57    58    59    60
+#   72   71   70   69   68   67   66   65   64    63    62    61
+#   73   74   75   76   77   78   79   80   81    82    83    84
+
+shexing <- function(data,n,m){
+  ##建立蛇形矩阵
+  data_1 <- matrix(nrow = m,ncol = n)
+  for(i in 1:m){
+  if(i%%2)
+  data_1[i,] <- ((i-1)*n+1):(i*n) 
+  else
+  data_1[i,] <- (i*n):((i-1)*n+1)
+  
+}
+
+  #竖着取
+d <- c()
+for(i in 1:n){
+  d <- c(d,data_1[,i])
+}
+##按顺序
+data2 <- data[d,]
+group <- data.frame(group = rep(1:n,each =m))
+## 分组
+p <- cbind(data2,group)
+p
+}
+```
+
+
+
+## 建立样本框2(蛇形随机)(不一样,是随机的)
+```{r}
+#与上述蛇形法类似,
+#前十二个高的随机分为12组
+#再十二个高的随机分为12组....
+
+
+shexing_suiji <- function(data,n,m){
+  ##建立蛇形矩阵
+  data_1 <- matrix(nrow = m,ncol = n)
+  for(i in 1:m){
+  data_1[i,] <- sample(((i-1)*n+1):(i*n)) 
+  
+}
+
+  #竖着取
+d <- c()
+for(i in 1:n){
+  d <- c(d,data_1[,i])
+}
+##按顺序
+data2 <- data[d,]
+group <- data.frame(group = rep(1:n,each =m))
+## 分组
+p <- cbind(data2,group)
+p
+}
+```
+
+
+
+## 整群抽样
+```{r}
+
+## 12群,1个群7个人,竖着看
+##整群抽样
+SRS <- function(data2){
+  d <- c()
+ data4 <- data.frame()
+for(i in 1:1000){
+ 
+## 抽样
+chouyang <- sample(12)[1:3]
+data3 <- subset(data2,group == chouyang[1] | group == chouyang[2] | group == chouyang[3] )
+
+
+##群规模相等
+M <- 7
+n <- 3
+N <- 12
+M0 <- 84
+f <- n/N
+#分组求均值
+yi_mean  <- aggregate(data3[,c(3,4)],by=list(data3$group),FUN=mean)[,2]
+#分组求和
+yi <- aggregate(data3[,c(3,4)],by=list(data3$group),FUN=sum)[,2]
+
+#(y_mean <- mean(yi_mean))
+(y_var <- (1-f)/n/M^2*var(yi)) 
+d <- c(d,y_var)
+#data4[i,1] <- mean(yi_mean)
+#data4[i,2] <- (1-f)/n/M^2*var(yi)
+#data4[i,3] <- y_mean-1.96*sqrt(y_var)
+#data4[i,4] <- y_mean+1.96*sqrt(y_var)
+#names(data4) <- c("均值","方差","置信上限","置信下限")
+}
+ d
+}
+
+```
+
+
+
+## 建立样本框
+```{r}
+##建立样本框12组,每组7个
+a <-shexing(data1,12,7) # 该函数第一个参数是数据框(第一列是性别,第二列是身高,第三列是体重).第二个参数是组数,第三个参数是每组人数,函数输出为分好组的数据框
+b <- shexing_suiji(data1,12,7)
+
+data_1 <- data1[sample(84),]
+group1 <- data.frame(group = rep(1:12,each =7))
+c <- cbind(data_1,group1)
+
+```
+
+
+## 1000次模拟实验得到方差
+```{r}
+
+
+v1 <- SRS(a) #SRS根据分好组的数据框,输出为1000次模拟实验的方差
+v2 <- SRS(b)
+v3 <- SRS(c)
+```
+
+
+## 分析结果
+```{r}
+new_data <- cbind(v1,v2,v3)
+sum(v1<v3)  ## 大于500,说明大多数情况下蛇形法比随机法的分组的方差是较小,较优的
+sum(v1<v2)  ##都差不多
+colnames(new_data) <- c("蛇形法","蛇形随机法","随机法")
+head(new_data)
+```
+
+
+
